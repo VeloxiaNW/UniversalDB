@@ -1,0 +1,54 @@
+name: Nightly Build
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Give gradle permission
+        run: chmod +x gradlew
+
+      - name: Take build
+        run: ./gradlew build
+
+      - name: Find build output
+        id: build_file
+        run: |
+          FILE=$(find build/libs -type f -name "*.jar" | head -n 1)
+          echo "file=$FILE" >> $GITHUB_OUTPUT
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly Build
+          body: |
+            Nightly release.
+            Commit hash: ${{ github.sha }}
+          files: ${{ steps.build_file.outputs.file }}
+          draft: false
+          make_latest: true
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
