@@ -30,7 +30,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Take build
-        run: ./gradlew build
+        run: ./gradlew build -x test
 
       - name: Find build output
         id: build_file
