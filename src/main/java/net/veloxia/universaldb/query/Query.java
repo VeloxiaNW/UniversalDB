@@ -1,5 +1,7 @@
 package net.veloxia.universaldb.query;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -21,7 +23,9 @@ import java.util.List;
  */
 public class Query<T> {
 
+    @Getter
     private final List<Condition> conditions = new ArrayList<>();
+    @Getter
     private final List<Sort> sorts = new ArrayList<>();
     private Integer limitValue;
     private Integer offsetValue;
@@ -56,8 +60,6 @@ public class Query<T> {
 
     void addCondition(Condition c) { conditions.add(c); }
 
-    public List<Condition> getConditions() { return conditions; }
-    public List<Sort>      getSorts()      { return sorts; }
     public Integer         getLimit()      { return limitValue; }
     public Integer         getOffset()     { return offsetValue; }
 

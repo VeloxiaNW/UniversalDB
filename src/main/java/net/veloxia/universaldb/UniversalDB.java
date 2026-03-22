@@ -14,7 +14,7 @@ import net.veloxia.universaldb.drivers.SQLiteDriver;
  */
 public class UniversalDB implements AutoCloseable {
 
-    private final Object driver;   // SQLiteDriver | MySQLDriver | MongoDriver
+    private final Object driver;
     private final DbType type;
 
     private enum DbType { SQLITE, MYSQL, MONGO }
@@ -49,7 +49,6 @@ public class UniversalDB implements AutoCloseable {
      * Repository<User, String> users    = db.repository(User.class);    // Mongo
      * }</pre>
      */
-    @SuppressWarnings("unchecked")
     public <T> Repository<T, ?> repository(Class<T> clazz) {
         return switch (type) {
             case SQLITE -> ((SQLiteDriver) driver).repository(clazz);

@@ -2,6 +2,7 @@ plugins {
     java
     `java-library`
     `maven-publish`
+    id("io.freefair.lombok") version "8.4"
 }
 
 group = "net.veloxia.universaldb"

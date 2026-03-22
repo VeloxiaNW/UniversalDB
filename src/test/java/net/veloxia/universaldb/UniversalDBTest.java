@@ -88,7 +88,7 @@ class UniversalDBTest {
         users.insert(new User("Bob",   "bob@x.com",   25));
         List<User> result = users.findMany(new Query<User>().where("name").eq("Alice"));
         assertEquals(1, result.size());
-        assertEquals("Alice", result.get(0).getName());
+        assertEquals("Alice", result.getFirst().getName());
     }
 
     @Test @DisplayName("query: gt filter")
@@ -148,7 +148,7 @@ class UniversalDBTest {
         users.insert(new User("Bob",   "b@x.com", 30));
         users.insert(new User("Carol", "c@x.com", 25));
         List<User> sorted = users.findMany(new Query<User>().orderBy("age", SortDirection.DESC));
-        assertEquals(30, sorted.get(0).getAge());
+        assertEquals(30, sorted.getFirst().getAge());
     }
 
     @Test @DisplayName("query: limit and offset (pagination)")
@@ -157,7 +157,7 @@ class UniversalDBTest {
             users.insert(new User("User" + i, i + "@x.com", 20 + i));
         List<User> page = users.findMany(new Query<User>().orderBy("age").limit(3).offset(2));
         assertEquals(3, page.size());
-        assertEquals(22, page.get(0).getAge());
+        assertEquals(22, page.getFirst().getAge());
     }
 
     @Test @DisplayName("query: findOne returns first match")

@@ -26,16 +26,13 @@ public class EntityReflection {
     }
 
     private static EntityMeta buildMeta(Class<?> clazz) {
-        // Table name
         Table tableAnn = clazz.getAnnotation(Table.class);
         String tableName = (tableAnn != null && !tableAnn.name().isBlank())
                 ? tableAnn.name()
                 : clazz.getSimpleName().toLowerCase();
 
-        // Collect all fields (including superclass fields)
         List<Field> allFields = getAllFields(clazz);
 
-        // Find @Id field
         Field idField = allFields.stream()
                 .filter(f -> f.isAnnotationPresent(Id.class))
                 .findFirst()
@@ -52,7 +49,6 @@ public class EntityReflection {
                 ? idColAnn.name()
                 : idField.getName();
 
-        // Collect non-id, non-transient columns
         List<ColumnMeta> columns = new ArrayList<>();
         for (Field f : allFields) {
             if (f.getName().equals(idField.getName())) continue;
@@ -109,10 +105,10 @@ public class EntityReflection {
             T instance = ctor.newInstance();
             EntityMeta meta = metaFor(clazz);
             // set id
-            Object idVal = values.get(meta.getIdColumnName());
-            if (idVal != null) setValue(instance, meta.getIdField(), idVal);
+            Object idVal = values.get(meta.idColumnName());
+            if (idVal != null) setValue(instance, meta.idField(), idVal);
             // set columns
-            for (ColumnMeta col : meta.getColumns()) {
+            for (ColumnMeta col : meta.columns()) {
                 Object v = values.get(col.columnName());
                 if (v != null) setValue(instance, col.field(), coerce(v, col.field().getType()));
             }

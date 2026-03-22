@@ -1,9 +1,13 @@
 package net.veloxia.universaldb;
 
+import lombok.Getter;
+import lombok.Setter;
 import net.veloxia.universaldb.annotations.Column;
 import net.veloxia.universaldb.annotations.Id;
 import net.veloxia.universaldb.annotations.Table;
 
+@Setter
+@Getter
 @Table(name = "users")
 public class User {
 
@@ -30,17 +34,6 @@ public class User {
         this.age    = age;
         this.active = active;
     }
-
-    public Long    getId()      { return id; }
-    public void    setId(Long id) { this.id = id; }
-    public String  getName()    { return name; }
-    public void    setName(String name) { this.name = name; }
-    public String  getEmail()   { return email; }
-    public void    setEmail(String email) { this.email = email; }
-    public int     getAge()     { return age; }
-    public void    setAge(int age) { this.age = age; }
-    public boolean isActive()   { return active; }
-    public void    setActive(boolean active) { this.active = active; }
 
     @Override public String toString() {
         return "User{id=" + id + ", name='" + name + "', email='" + email + "', age=" + age + "}";

@@ -34,9 +34,9 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     public void createTableIfNotExists() {
         StringBuilder sb = new StringBuilder("CREATE TABLE IF NOT EXISTS ")
-                .append(meta.getTableName()).append(" (\n  ")
-                .append(meta.getIdColumnName()).append(" ").append(idColumnDef());
-        for (ColumnMeta col : meta.getColumns()) {
+                .append(meta.tableName()).append(" (\n  ")
+                .append(meta.idColumnName()).append(" ").append(idColumnDef());
+        for (ColumnMeta col : meta.columns()) {
             sb.append(",\n  ").append(col.columnName())
               .append(" ").append(sqlTypeFor(col.field().getType()))
               .append(col.nullable() ? "" : " NOT NULL")
@@ -66,10 +66,10 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public T insert(T entity) {
-        List<ColumnMeta> cols = meta.getColumns();
+        List<ColumnMeta> cols = meta.columns();
         String colNames = String.join(", ", cols.stream().map(ColumnMeta::columnName).toList());
         String placeholders = String.join(", ", cols.stream().map(c -> "?").toList());
-        String sql = "INSERT INTO " + meta.getTableName() + " (" + colNames + ") VALUES (" + placeholders + ")";
+        String sql = "INSERT INTO " + meta.tableName() + " (" + colNames + ") VALUES (" + placeholders + ")";
         log.debug("Insert: {}", sql);
         try (PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             for (int i = 0; i < cols.size(); i++)
@@ -78,7 +78,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
             try (ResultSet rs = stmt.getGeneratedKeys()) {
                 if (rs.next()) {
                     Object rawId = rs.getObject(1);
-                    EntityReflection.setValue(entity, meta.getIdField(), coerceId(rawId));
+                    EntityReflection.setValue(entity, meta.idField(), coerceId(rawId));
                 }
             }
         } catch (SQLException e) {
@@ -96,7 +96,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public Optional<T> findById(ID id) {
-        String sql = "SELECT * FROM " + meta.getTableName() + " WHERE " + meta.getIdColumnName() + " = ?";
+        String sql = "SELECT * FROM " + meta.tableName() + " WHERE " + meta.idColumnName() + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
@@ -109,7 +109,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public List<T> findAll() {
-        try (ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + meta.getTableName())) {
+        try (ResultSet rs = connection.createStatement().executeQuery("SELECT * FROM " + meta.tableName())) {
             return mapAll(rs);
         } catch (SQLException e) {
             throw new RuntimeException("findAll failed", e);
@@ -120,7 +120,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
     public Optional<T> findOne(Query<T> query) {
         query.limit(1);
         List<T> results = findMany(query);
-        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.getFirst());
     }
 
     @Override
@@ -129,7 +129,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
         String order = buildOrderBy(query.getSorts());
         String limit  = query.getLimit()  != null ? " LIMIT "  + query.getLimit()  : "";
         String offset = query.getOffset() != null ? " OFFSET " + query.getOffset() : "";
-        String sql = "SELECT * FROM " + meta.getTableName() + where.sql + order + limit + offset;
+        String sql = "SELECT * FROM " + meta.tableName() + where.sql + order + limit + offset;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < where.params.size(); i++) stmt.setObject(i + 1, where.params.get(i));
             try (ResultSet rs = stmt.executeQuery()) { return mapAll(rs); }
@@ -141,7 +141,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
     @Override
     public long count() {
         try (ResultSet rs = connection.createStatement()
-                .executeQuery("SELECT COUNT(*) FROM " + meta.getTableName())) {
+                .executeQuery("SELECT COUNT(*) FROM " + meta.tableName())) {
             return rs.next() ? rs.getLong(1) : 0;
         } catch (SQLException e) {
             throw new RuntimeException("count failed", e);
@@ -151,7 +151,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
     @Override
     public long count(Query<T> query) {
         WhereClause where = buildWhere(query.getConditions());
-        String sql = "SELECT COUNT(*) FROM " + meta.getTableName() + where.sql;
+        String sql = "SELECT COUNT(*) FROM " + meta.tableName() + where.sql;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < where.params.size(); i++) stmt.setObject(i + 1, where.params.get(i));
             try (ResultSet rs = stmt.executeQuery()) { return rs.next() ? rs.getLong(1) : 0; }
@@ -162,7 +162,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public T save(T entity) {
-        Object id = EntityReflection.getValue(entity, meta.getIdField());
+        Object id = EntityReflection.getValue(entity, meta.idField());
         if (id == null || id.equals(0) || id.equals(0L)) return insert(entity);
         update(entity);
         return entity;
@@ -170,13 +170,13 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public int update(T entity) {
-        List<ColumnMeta> cols = meta.getColumns();
+        List<ColumnMeta> cols = meta.columns();
         String sets = String.join(", ", cols.stream().map(c -> c.columnName() + " = ?").toList());
-        String sql  = "UPDATE " + meta.getTableName() + " SET " + sets + " WHERE " + meta.getIdColumnName() + " = ?";
+        String sql  = "UPDATE " + meta.tableName() + " SET " + sets + " WHERE " + meta.idColumnName() + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < cols.size(); i++)
                 stmt.setObject(i + 1, EntityReflection.getValue(entity, cols.get(i).field()));
-            stmt.setObject(cols.size() + 1, EntityReflection.getValue(entity, meta.getIdField()));
+            stmt.setObject(cols.size() + 1, EntityReflection.getValue(entity, meta.idField()));
             return stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("update failed", e);
@@ -188,7 +188,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
     public final int updateWhere(Query<T> query, Map.Entry<String, Object>... fields) {
         String sets = String.join(", ", Arrays.stream(fields).map(e -> e.getKey() + " = ?").toList());
         WhereClause where = buildWhere(query.getConditions());
-        String sql = "UPDATE " + meta.getTableName() + " SET " + sets + where.sql;
+        String sql = "UPDATE " + meta.tableName() + " SET " + sets + where.sql;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             int i = 1;
             for (Map.Entry<String, Object> entry : fields) stmt.setObject(i++, entry.getValue());
@@ -201,7 +201,7 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public boolean deleteById(ID id) {
-        String sql = "DELETE FROM " + meta.getTableName() + " WHERE " + meta.getIdColumnName() + " = ?";
+        String sql = "DELETE FROM " + meta.tableName() + " WHERE " + meta.idColumnName() + " = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setObject(1, id);
             return stmt.executeUpdate() > 0;
@@ -213,13 +213,13 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
     @Override
     @SuppressWarnings("unchecked")
     public boolean delete(T entity) {
-        return deleteById((ID) EntityReflection.getValue(entity, meta.getIdField()));
+        return deleteById((ID) EntityReflection.getValue(entity, meta.idField()));
     }
 
     @Override
     public int deleteWhere(Query<T> query) {
         WhereClause where = buildWhere(query.getConditions());
-        String sql = "DELETE FROM " + meta.getTableName() + where.sql;
+        String sql = "DELETE FROM " + meta.tableName() + where.sql;
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             for (int i = 0; i < where.params.size(); i++) stmt.setObject(i + 1, where.params.get(i));
             return stmt.executeUpdate();
@@ -230,14 +230,14 @@ public abstract class SqlRepository<T, ID> implements Repository<T, ID> {
 
     @Override
     public void clear() {
-        try { connection.createStatement().execute("DELETE FROM " + meta.getTableName()); }
+        try { connection.createStatement().execute("DELETE FROM " + meta.tableName()); }
         catch (SQLException e) { throw new RuntimeException("clear failed", e); }
     }
 
     private T mapRow(ResultSet rs) throws SQLException {
         Map<String, Object> values = new LinkedHashMap<>();
-        values.put(meta.getIdColumnName(), rs.getObject(meta.getIdColumnName()));
-        for (ColumnMeta col : meta.getColumns())
+        values.put(meta.idColumnName(), rs.getObject(meta.idColumnName()));
+        for (ColumnMeta col : meta.columns())
             values.put(col.columnName(), rs.getObject(col.columnName()));
         return EntityReflection.fromMap(clazz, values);
     }

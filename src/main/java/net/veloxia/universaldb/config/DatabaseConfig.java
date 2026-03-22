@@ -1,5 +1,7 @@
 package net.veloxia.universaldb.config;
 
+import lombok.Getter;
+
 /**
  * Base class for all database configurations.
  * Use one of the concrete subclasses: {@link SQLiteConfig}, {@link MySQLConfig}, {@link MongoDBConfig}.
@@ -17,6 +19,7 @@ public abstract class DatabaseConfig {
      * DatabaseConfig mem = new SQLiteConfig(":memory:");
      * }</pre>
      */
+    @Getter
     public static final class SQLiteConfig extends DatabaseConfig {
         private final String path;
 
@@ -28,8 +31,6 @@ public abstract class DatabaseConfig {
             this("database.db");
         }
 
-        public String getPath() { return path; }
-
         @Override public String toString() { return "SQLite(" + path + ")"; }
     }
 
@@ -39,6 +40,7 @@ public abstract class DatabaseConfig {
      * DatabaseConfig cfg = new MySQLConfig.Builder("myapp", "root", "secret").build();
      * }</pre>
      */
+    @Getter
     public static final class MySQLConfig extends DatabaseConfig {
         private final String host;
         private final int port;
@@ -59,15 +61,6 @@ public abstract class DatabaseConfig {
             this.allowPublicKeyRetrieval = b.allowPublicKeyRetrieval;
             this.connectionTimeout = b.connectionTimeout;
         }
-
-        public String getHost()                  { return host; }
-        public int    getPort()                  { return port; }
-        public String getDatabase()              { return database; }
-        public String getUsername()              { return username; }
-        public String getPassword()              { return password; }
-        public boolean isUseSSL()                { return useSSL; }
-        public boolean isAllowPublicKeyRetrieval(){ return allowPublicKeyRetrieval; }
-        public int    getConnectionTimeout()     { return connectionTimeout; }
 
         @Override public String toString() {
             return "MySQL(" + host + ":" + port + "/" + database + ")";
@@ -107,7 +100,9 @@ public abstract class DatabaseConfig {
      * }</pre>
      */
     public static final class MongoDBConfig extends DatabaseConfig {
+        @Getter
         private final String uri;
+        @Getter
         private final String database;
         private final int connectTimeoutMs;
         private final int socketTimeoutMs;
@@ -127,8 +122,6 @@ public abstract class DatabaseConfig {
             this.socketTimeoutMs = socketTimeoutMs;
         }
 
-        public String getUri()            { return uri; }
-        public String getDatabase()       { return database; }
         public int    getConnectTimeout() { return connectTimeoutMs; }
         public int    getSocketTimeout()  { return socketTimeoutMs; }
 

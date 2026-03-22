@@ -55,7 +55,7 @@ public class MongoDriver implements AutoCloseable {
         EntityMeta meta = EntityReflection.metaFor(clazz);
         MongoCollection<Document> collection = getClient()
                 .getDatabase(config.getDatabase())
-                .getCollection(meta.getTableName());
+                .getCollection(meta.tableName());
         return new MongoRepository<>(clazz, collection);
     }
 
@@ -86,7 +86,7 @@ class MongoRepository<T> implements Repository<T, String> {
         Document doc = toDocument(entity);
         collection.insertOne(doc);
         String id = doc.getObjectId("_id").toHexString();
-        EntityReflection.setValue(entity, meta.getIdField(), id);
+        EntityReflection.setValue(entity, meta.idField(), id);
         return entity;
     }
 
@@ -97,7 +97,7 @@ class MongoRepository<T> implements Repository<T, String> {
         collection.insertMany(docs);
         for (int i = 0; i < entities.size(); i++) {
             String id = docs.get(i).getObjectId("_id").toHexString();
-            EntityReflection.setValue(entities.get(i), meta.getIdField(), id);
+            EntityReflection.setValue(entities.get(i), meta.idField(), id);
         }
         return entities;
     }
@@ -149,7 +149,7 @@ class MongoRepository<T> implements Repository<T, String> {
 
     @Override
     public T save(T entity) {
-        Object id = EntityReflection.getValue(entity, meta.getIdField());
+        Object id = EntityReflection.getValue(entity, meta.idField());
         if (id == null || id.toString().isBlank()) return insert(entity);
         update(entity);
         return entity;
@@ -157,10 +157,10 @@ class MongoRepository<T> implements Repository<T, String> {
 
     @Override
     public int update(T entity) {
-        String id = Objects.toString(EntityReflection.getValue(entity, meta.getIdField()), null);
+        String id = Objects.toString(EntityReflection.getValue(entity, meta.idField()), null);
         if (id == null) throw new IllegalArgumentException("Cannot update entity without an ID");
         List<Bson> updates = new ArrayList<>();
-        for (ColumnMeta col : meta.getColumns())
+        for (ColumnMeta col : meta.columns())
             updates.add(Updates.set(col.columnName(), EntityReflection.getValue(entity, col.field())));
         var result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), Updates.combine(updates));
         return (int) result.getModifiedCount();
@@ -183,7 +183,7 @@ class MongoRepository<T> implements Repository<T, String> {
 
     @Override
     public boolean delete(T entity) {
-        Object id = EntityReflection.getValue(entity, meta.getIdField());
+        Object id = EntityReflection.getValue(entity, meta.idField());
         return id != null && deleteById(id.toString());
     }
 
@@ -199,7 +199,7 @@ class MongoRepository<T> implements Repository<T, String> {
 
     private Document toDocument(T entity) {
         Document doc = new Document();
-        for (ColumnMeta col : meta.getColumns())
+        for (ColumnMeta col : meta.columns())
             doc.append(col.columnName(), EntityReflection.getValue(entity, col.field()));
         return doc;
     }
@@ -207,13 +207,12 @@ class MongoRepository<T> implements Repository<T, String> {
     private T fromDocument(Document doc) {
         Map<String, Object> values = new LinkedHashMap<>();
         ObjectId oid = doc.getObjectId("_id");
-        values.put(meta.getIdColumnName(), oid != null ? oid.toHexString() : null);
-        for (ColumnMeta col : meta.getColumns())
+        values.put(meta.idColumnName(), oid != null ? oid.toHexString() : null);
+        for (ColumnMeta col : meta.columns())
             values.put(col.columnName(), doc.get(col.columnName()));
         return EntityReflection.fromMap(clazz, values);
     }
 
-    @SuppressWarnings("unchecked")
     private Bson buildFilter(List<Condition> conditions) {
         if (conditions.isEmpty()) return new Document();
         List<Bson> filters = new ArrayList<>();
@@ -229,11 +228,11 @@ class MongoRepository<T> implements Repository<T, String> {
                                         c.getValue().toString().replace("%", ".*"));
                 case IN         -> Filters.in(c.getField(), (Iterable<?>) c.getValue());
                 case NOT_IN     -> Filters.nin(c.getField(), (Iterable<?>) c.getValue());
-                case IS_NULL    -> Filters.eq(c.getField(), (Object) null);
-                case IS_NOT_NULL -> Filters.ne(c.getField(), (Object) null);
+                case IS_NULL    -> Filters.eq(c.getField(), null);
+                case IS_NOT_NULL -> Filters.ne(c.getField(), null);
             };
             filters.add(f);
         }
-        return filters.size() == 1 ? filters.get(0) : Filters.and(filters);
+        return filters.size() == 1 ? filters.getFirst() : Filters.and(filters);
     }
 }

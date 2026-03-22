@@ -69,7 +69,7 @@ class SQLiteRepository<T, ID> extends SqlRepository<T, ID> {
 
     @Override
     protected String idColumnDef() {
-        return meta.getIdColumnName() + " INTEGER PRIMARY KEY AUTOINCREMENT";
+        return meta.idColumnName() + " INTEGER PRIMARY KEY AUTOINCREMENT";
     }
 
     @Override

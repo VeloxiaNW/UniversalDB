@@ -78,6 +78,6 @@ class MySQLRepository<T, ID> extends SqlRepository<T, ID> {
 
     @Override
     protected String idColumnDef() {
-        return meta.getIdColumnName() + " BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+        return meta.idColumnName() + " BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY";
     }
 }
