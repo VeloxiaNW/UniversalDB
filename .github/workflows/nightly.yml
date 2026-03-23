@@ -38,6 +38,11 @@ jobs:
           FILE=$(find build/libs -type f -name "*.jar" | head -n 1)
           echo "file=$FILE" >> $GITHUB_OUTPUT
 
+      - name: Delete old nightly tag
+        run: |
+          git tag -d nightly || true
+          git push origin :refs/tags/nightly || true
+
       - name: Create nightly release
         uses: softprops/action-gh-release@v2
         with:
