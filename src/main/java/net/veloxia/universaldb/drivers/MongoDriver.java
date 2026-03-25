@@ -45,7 +45,7 @@ public class MongoDriver implements AutoCloseable {
 
     private MongoClient getClient() {
         if (client == null) {
-            log.info("Connecting to MongoDB: {}/{}", config.getUri(), config.getDatabase());
+            log.debug("Connecting to MongoDB: {}/{}", config.getUri(), config.getDatabase());
             client = MongoClients.create(config.getUri());
         }
         return client;
