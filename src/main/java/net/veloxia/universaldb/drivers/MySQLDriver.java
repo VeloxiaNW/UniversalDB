@@ -42,7 +42,7 @@ public class MySQLDriver implements AutoCloseable {
                         + "&allowPublicKeyRetrieval=" + config.isAllowPublicKeyRetrieval()
                         + "&connectTimeout=" + config.getConnectionTimeout()
                         + "&serverTimezone=UTC";
-                log.info("Connecting to MySQL: {}:{}/{}", config.getHost(), config.getPort(), config.getDatabase());
+                log.debug("Connecting to MySQL: {}:{}/{}", config.getHost(), config.getPort(), config.getDatabase());
                 Properties props = new Properties();
                 props.setProperty("user", config.getUsername());
                 props.setProperty("password", config.getPassword());
@@ -78,6 +78,6 @@ class MySQLRepository<T, ID> extends SqlRepository<T, ID> {
 
     @Override
     protected String idColumnDef() {
-        return meta.idColumnName() + " BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY";
+        return "BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY";
     }
 }

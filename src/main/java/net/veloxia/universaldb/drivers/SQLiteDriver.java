@@ -34,7 +34,7 @@ public class SQLiteDriver implements AutoCloseable {
             try {
                 Class.forName("org.sqlite.JDBC");
                 String url = "jdbc:sqlite:" + config.getPath();
-                log.info("Connecting to SQLite: {}", url);
+                log.debug("Connecting to SQLite: {}", url);
                 connection = DriverManager.getConnection(url);
                 connection.createStatement().execute("PRAGMA journal_mode=WAL");
                 connection.createStatement().execute("PRAGMA foreign_keys=ON");
@@ -67,9 +67,8 @@ class SQLiteRepository<T, ID> extends SqlRepository<T, ID> {
         super(clazz, connection);
     }
 
-    @Override
     protected String idColumnDef() {
-        return meta.idColumnName() + " INTEGER PRIMARY KEY AUTOINCREMENT";
+        return "INTEGER PRIMARY KEY AUTOINCREMENT";
     }
 
     @Override
